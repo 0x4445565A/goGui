@@ -132,7 +132,7 @@ func initThrust() {
 
 func main() {
   fmt.Println("Checking for an open port...")
-  Current.port = "8080"
+  Current.port = GetPort()
   Current.uri = "http://localhost:" + Current.port + "/"
   Current.windows = make(map[int]*window.Window)
   fmt.Println("Using port", Current.port)
