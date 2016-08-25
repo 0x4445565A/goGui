@@ -7,4 +7,5 @@ Yay!  New Smaller Window!
 <script>
 document.getElementById("result").innerHTML = localStorage.getItem("someSessionItem");
 </script>
-{{template "footer"}}
+</body>
+</html>
