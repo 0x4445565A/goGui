@@ -128,7 +128,6 @@ func initThrust() {
     Width:  750,
     Height: 750,
   })
-  thrust.LockThread()
 }
 
 func main() {
