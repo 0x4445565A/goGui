@@ -85,10 +85,10 @@ func GetPort() string {
 }
 
 func initThrust(port string) {
-  //thrust.InitLogger()
+  thrust.InitLogger()
   thrust.Start()
   
-  session := thrust.NewSession(false, false, "cache")
+  session := thrust.NewSession(false, false, ".cache")
   thrustWindow := thrust.NewWindow(thrust.WindowOptions{
     RootUrl: "http://localhost:" + port + "/",
     Session: session,
