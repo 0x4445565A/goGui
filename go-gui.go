@@ -16,7 +16,10 @@ import (
   "net/http"
   "html/template"
   "github.com/gorilla/mux"
+  "github.com/miketheprogrammer/go-thrust/lib/bindings/window"
+  "github.com/miketheprogrammer/go-thrust/lib/bindings/session"
   "github.com/miketheprogrammer/go-thrust/thrust"
+  "github.com/miketheprogrammer/go-thrust/lib/commands"
 )
 
 func handlerDebug(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +27,6 @@ func handlerDebug(w http.ResponseWriter, r *http.Request) {
   fmt.Println(r.Form)
   fmt.Println("path", r.URL.Path)
   fmt.Println("scheme", r.URL.Scheme)
-  fmt.Println(r.Form["url_long"])
   for k, v := range r.Form {
     fmt.Println("key:", k)
     fmt.Println("val:", strings.Join(v, ""))
@@ -36,7 +38,18 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
   t.Execute(w, map[string]interface{}{
     "name": "Partner",
   })
-  //r.ParseForm()
+  handlerDebug(w, r)
+  if r.Method == "POST" {
+    _ = addWindow(Current.uri + "new-window", commands.SizeHW{
+      Width:  500,
+      Height: 500,
+    })
+  }
+}
+
+func newWindowHandler(w http.ResponseWriter, r *http.Request) {
+  t := loadTemplates("templates/new-window.gtpl")
+  t.Execute(w, map[string]interface{}{})
   handlerDebug(w, r)
 }
 
@@ -84,36 +97,58 @@ func GetPort() string {
   return strconv.Itoa(l.Addr().(*net.TCPAddr).Port)
 }
 
-func initThrust(port string) {
+var Current struct {
+  session *session.Session
+  port string
+  uri string
+  windows map[int]*window.Window
+}
+
+func addWindow(url string, size commands.SizeHW) int {
+  index := len(Current.windows) - 1
+  if index < 0 {
+    index = 0
+  } 
+  Current.windows[index] = thrust.NewWindow(thrust.WindowOptions{
+    RootUrl: url,
+    Session: Current.session,
+    Size: size,
+  })
+  Current.windows[index].Show()
+  Current.windows[index].Focus()
+  return index
+}
+
+func initThrust() {
   thrust.InitLogger()
   thrust.Start()
   
-  session := thrust.NewSession(false, false, ".cache")
-  thrustWindow := thrust.NewWindow(thrust.WindowOptions{
-    RootUrl: "http://localhost:" + port + "/",
-    Session: session,
+  Current.session = thrust.NewSession(false, false, ".cache")
+  _ = addWindow(Current.uri, commands.SizeHW{
+    Width:  750,
+    Height: 750,
   })
-  thrustWindow.Show()
-  //thrustWindow.Maximize()
-  thrustWindow.Focus()
+  thrust.LockThread()
 }
 
 func main() {
   fmt.Println("Checking for an open port...")
-  port := GetPort()
-
-  fmt.Println("Using port", port)
+  Current.port = "8080"
+  Current.uri = "http://localhost:" + Current.port + "/"
+  Current.windows = make(map[int]*window.Window)
+  fmt.Println("Using port", Current.port)
   fmt.Println("Building Router...")
   r := mux.NewRouter()
   r.HandleFunc("/", rootHandler)
   r.HandleFunc("/angular", angularExampleHandler)
+  r.HandleFunc("/new-window", newWindowHandler)
   http.HandleFunc("/css/", staticFileHandler)
   http.HandleFunc("/js/", staticFileHandler)
   http.Handle("/", r)
 
   fmt.Println("Init Thrust...")
-  initThrust(port)
+  initThrust()
 
   fmt.Println("Ready and serving!")
-  http.ListenAndServe(":" + port, nil)
+  http.ListenAndServe(":" + Current.port, nil)
 }
