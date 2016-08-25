@@ -40,8 +40,16 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
   handlerDebug(w, r)
 }
 
+func angularExampleHandler(w http.ResponseWriter, r *http.Request) {
+  t := loadTemplates("templates/angular.gtpl")
+  t.Execute(w, map[string]interface{}{})
+  handlerDebug(w, r)
+}
+
 func loadTemplates(name ...string) *template.Template {
   name = append(name, "templates/head.gtpl")
+  name = append(name, "templates/head-angular.gtpl")
+  name = append(name, "templates/nav.gtpl")
   name = append(name, "templates/footer.gtpl")
   t := template.Must(template.ParseFiles(
     name...
@@ -98,7 +106,9 @@ func main() {
   fmt.Println("Building Router...")
   r := mux.NewRouter()
   r.HandleFunc("/", rootHandler)
+  r.HandleFunc("/angular", angularExampleHandler)
   http.HandleFunc("/css/", staticFileHandler)
+  http.HandleFunc("/js/", staticFileHandler)
   http.Handle("/", r)
 
   fmt.Println("Init Thrust...")
